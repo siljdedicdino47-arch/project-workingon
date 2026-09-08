@@ -16,6 +16,58 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# Custom theme: dark scientific palette, cleaner cards, tighter chat bubbles
+st.markdown("""
+<style>
+    .stApp {
+        background: linear-gradient(180deg, #0b1120 0%, #0f172a 100%);
+    }
+    h1, h2, h3 { color: #e2e8f0 !important; }
+    p, li, span, label { color: #cbd5e1; }
+    [data-testid="stSidebar"] {
+        background: #0f172a;
+        border-right: 1px solid #1e293b;
+    }
+    [data-testid="stChatMessage"] {
+        background: #111827;
+        border: 1px solid #1f2937;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+    }
+    [data-testid="stMetric"] {
+        background: #111827;
+        border: 1px solid #1f2937;
+        border-radius: 10px;
+        padding: 0.6rem 0.4rem;
+    }
+    .stButton>button {
+        border-radius: 8px;
+        border: 1px solid #2dd4bf33;
+        background: #134e4a22;
+        color: #5eead4;
+    }
+    .stButton>button:hover {
+        border-color: #2dd4bf;
+        background: #134e4a55;
+        color: #99f6e4;
+    }
+    .app-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 0 1rem 0;
+        border-bottom: 1px solid #1e293b;
+        margin-bottom: 1rem;
+    }
+    .app-header .logo {
+        font-size: 2rem;
+    }
+    .app-header .title { font-size: 1.6rem; font-weight: 700; color: #f1f5f9; }
+    .app-header .subtitle { font-size: 0.9rem; color: #64748b; }
+</style>
+""", unsafe_allow_html=True)
+
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 # Try importing RDKit
@@ -292,8 +344,18 @@ def render_literature_card(references: list):
 # ==========================================
 
 def main():
-    st.title("🧪 Scafflix — ChemBrain AI Assistant")
-    st.caption("Drug discovery assistant with automated ADMET prediction & PubMed literature citations")
+    st.markdown(
+        """
+        <div class="app-header">
+            <div class="logo">🧪</div>
+            <div>
+                <div class="title">Scafflix — ChemBrain</div>
+                <div class="subtitle">ADMET prediction & PubMed-grounded literature search for drug discovery</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     
     # Safely read secrets — st.secrets raises if no secrets.toml exists at all,
     # which is the normal case for a local run with no key configured.
@@ -409,8 +471,20 @@ def main():
                             "literature_data": pubmed_res
                         })
                         st.stop()
-                    
-                    ans_text = "Please enter an Anthropic API Key in the sidebar to enable conversational ChemBrain tool-calling!"
+
+                    # Neither tool matched — this is Direct Tools Mode, not a broken app.
+                    # Guide the user toward what actually works instead of demanding a key.
+                    ans_text = (
+                        "I couldn't detect a SMILES string or find matching PubMed results "
+                        "in that message. **You don't need an API key** — Direct Tools Mode "
+                        "handles two things directly:\n\n"
+                        "- **ADMET prediction**: paste a SMILES string, e.g. "
+                        "`CC(=O)OC1=CC=CC=C1C(=O)O`\n"
+                        "- **Literature search**: use PubMed-style keywords, e.g. "
+                        "`KRAS G12C inhibitor selectivity`\n\n"
+                        "Free-form conversational chat (like this message) needs an Anthropic "
+                        "API key in the sidebar — that part is optional, not required."
+                    )
                     st.markdown(ans_text)
                     st.session_state["messages"].append({"role": "assistant", "content": ans_text})
             
