@@ -295,21 +295,37 @@ def main():
     st.title("🧪 Scafflix — ChemBrain AI Assistant")
     st.caption("Drug discovery assistant with automated ADMET prediction & PubMed literature citations")
     
+    # Safely read secrets — st.secrets raises if no secrets.toml exists at all,
+    # which is the normal case for a local run with no key configured.
+    def _get_secret(name: str) -> str:
+        try:
+            return st.secrets.get(name, "")
+        except Exception:
+            return ""
+
     # Sidebar Setup
     with st.sidebar:
         st.header("⚙️ Configuration")
         api_key_input = st.text_input(
-            "Anthropic API Key",
+            "Anthropic API Key (optional)",
             type="password",
-            value=st.secrets.get("ANTHROPIC_API_KEY", os.getenv("ANTHROPIC_API_KEY", "")),
-            help="Required for full ChemBrain Claude tool calling."
+            value=_get_secret("ANTHROPIC_API_KEY") or os.getenv("ANTHROPIC_API_KEY", ""),
+            help="Optional. Leave blank to run in Direct Tools Mode — ADMET prediction and "
+                 "PubMed search still work fully, using RDKit and NCBI directly instead of "
+                 "Claude. Add a key later for conversational synthesis and citation writeups. "
+                 "Never commit a real key to source control — use environment variables or "
+                 "st.secrets instead of hardcoding it here."
         )
         ncbi_key_input = st.text_input(
             "NCBI API Key (Optional)",
             type="password",
-            value=st.secrets.get("NCBI_API_KEY", os.getenv("NCBI_API_KEY", "")),
+            value=_get_secret("NCBI_API_KEY") or os.getenv("NCBI_API_KEY", ""),
             help="Raises PubMed rate limit from 3/sec to 10/sec."
         )
+
+        if not api_key_input:
+            st.info("🔧 **Direct Tools Mode** — no Anthropic key set. ADMET prediction and "
+                    "PubMed search run locally without an AI chat layer.")
         
         st.divider()
         st.subheader("💊 Sample SMILES Presets")
@@ -362,10 +378,11 @@ def main():
         # Process Assistant Response
         with st.chat_message("assistant"):
             if not ANTHROPIC_AVAILABLE or not api_key_input:
-                # Direct / Fallback Mode without Claude API key
+                # Direct / Fallback Mode without Claude API key — no AI call is made at all,
+                # so this path never sends anything to a third party except NCBI PubMed.
                 with st.spinner("Processing query via local ChemBrain tools..."):
-                    # Check for SMILES pattern
-                    smiles_match = re.search(r'`?([A-Za-z0-9@+\-\[\]\(\)\\\/=#$%]+)`?', prompt)
+                    # Check for SMILES pattern (cap length to avoid pathological regex input)
+                    smiles_match = re.search(r'`?([A-Za-z0-9@+\-\[\]\(\)\\\/=#$%]{1,200})`?', prompt[:500])
                     if smiles_match and any(c in prompt for c in ['=', '(', ')', '#']) and len(smiles_match.group(1)) > 3:
                         smiles = smiles_match.group(1)
                         admet_res = predict_admet(smiles)
