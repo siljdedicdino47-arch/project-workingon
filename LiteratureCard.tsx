@@ -1,6 +1,5 @@
 import React from "react";
 import { ReferenceItem } from "../services/api";
-import { BookOpen, ExternalLink, FileText } from "lucide-react";
 
 interface LiteratureCardProps {
   references: ReferenceItem[];
@@ -12,42 +11,27 @@ export const LiteratureCard: React.FC<LiteratureCardProps> = ({ references }) =>
   }
 
   return (
-    <div className="mt-4 bg-slate-900 text-slate-100 rounded-xl p-5 border border-slate-700/80 shadow-lg font-sans">
-      <div className="flex items-center gap-2 pb-3 mb-4 border-b border-slate-800">
-        <div className="p-2 bg-cyan-500/20 rounded-lg text-cyan-400">
-          <BookOpen className="w-5 h-5" />
-        </div>
-        <div>
-          <h4 className="font-bold text-base text-slate-100">PubMed Cited Literature ({references.length})</h4>
-          <p className="text-xs text-slate-400">Verified NCBI PubMed articles and citations</p>
-        </div>
+    <div className="mt-3 border border-line rounded bg-surface overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-line text-xs text-ink-muted">
+        {references.length} PubMed reference{references.length === 1 ? "" : "s"}
       </div>
-
-      <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+      <div className="max-h-72 overflow-y-auto thin-scroll">
         {references.map((ref, idx) => (
-          <div key={ref.pmid || idx} className="bg-slate-800/50 hover:bg-slate-800 rounded-lg p-3 border border-slate-700/50 transition">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-2">
-                <span className="flex-shrink-0 text-xs font-bold text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
-                  [{idx + 1}]
-                </span>
-                <div>
-                  <a
-                    href={ref.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-semibold text-cyan-300 hover:text-cyan-200 hover:underline flex items-center gap-1.5"
-                  >
-                    {ref.title} <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
-                  </a>
-                  <p className="text-xs text-slate-300 mt-1">{ref.authors}</p>
-                  <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-400 font-mono">
-                    <span>{ref.journal}</span>
-                    <span>•</span>
-                    <span>{ref.year}</span>
-                    <span>•</span>
-                    <span className="text-slate-400">PMID: {ref.pmid}</span>
-                  </div>
+          <div key={ref.pmid || idx} className="px-4 py-3 border-b border-line last:border-b-0">
+            <div className="flex gap-2.5">
+              <span className="text-xs font-mono text-ink-faint flex-shrink-0 mt-0.5">[{idx + 1}]</span>
+              <div className="min-w-0">
+                <a
+                  href={ref.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-accent hover:text-accent-strong hover:underline"
+                >
+                  {ref.title}
+                </a>
+                <div className="text-xs text-ink-muted mt-0.5">{ref.authors}</div>
+                <div className="text-[11px] text-ink-faint font-mono mt-0.5">
+                  {ref.journal}, {ref.year} — PMID {ref.pmid}
                 </div>
               </div>
             </div>

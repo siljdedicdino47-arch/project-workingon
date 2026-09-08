@@ -1,10 +1,21 @@
 import React from "react";
 import { AdmetResponse } from "../services/api";
-import { Activity, ShieldCheck, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 
 interface AdmetCardProps {
   data: AdmetResponse;
 }
+
+const flagColor: Record<string, string> = {
+  green: "#2F7D5A",
+  amber: "#A9762E",
+  red: "#AE3B3B",
+};
+
+const flagLabel: Record<string, string> = {
+  green: "favorable",
+  amber: "borderline",
+  red: "problematic",
+};
 
 export const AdmetCard: React.FC<AdmetCardProps> = ({ data }) => {
   if (!data || !data.valid || !data.properties || !data.lipinski) {
@@ -12,107 +23,57 @@ export const AdmetCard: React.FC<AdmetCardProps> = ({ data }) => {
   }
 
   const { properties, lipinski, smiles, source } = data;
-
-  const getFlagBadge = (flag: "green" | "amber" | "red") => {
-    switch (flag) {
-      case "green":
-        return (
-          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-            <CheckCircle2 className="w-3.5 h-3.5" /> Optimal / Low Risk
-          </span>
-        );
-      case "amber":
-        return (
-          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
-            <AlertTriangle className="w-3.5 h-3.5" /> Moderate
-          </span>
-        );
-      case "red":
-        return (
-          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 border border-rose-300">
-            <XCircle className="w-3.5 h-3.5" /> Poor / High Risk
-          </span>
-        );
-      default:
-        return null;
-    }
-  };
+  const lipinskiRows: [string, number | string, string][] = [
+    ["MW", lipinski.mw, "≤ 500"],
+    ["LogP", lipinski.logp, "≤ 5.0"],
+    ["HBD", lipinski.hbd, "≤ 5"],
+    ["HBA", lipinski.hba, "≤ 10"],
+    ["TPSA", `${lipinski.tpsa} Å²`, "≤ 140"],
+  ];
 
   return (
-    <div className="mt-4 bg-slate-900 text-slate-100 rounded-xl p-5 border border-slate-700/80 shadow-lg font-sans">
-      {/* Header */}
-      <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
-        <div className="flex items-center gap-2">
-          <div className="p-2 bg-indigo-500/20 rounded-lg text-indigo-400">
-            <Activity className="w-5 h-5" />
-          </div>
-          <div>
-            <h4 className="font-bold text-base text-slate-100">ADMET Profile & Drug-Likeness</h4>
-            <p className="text-xs text-slate-400 font-mono truncate max-w-xs sm:max-w-md">{smiles}</p>
-          </div>
-        </div>
-        {source && (
-          <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
-            {source}
-          </span>
-        )}
+    <div className="mt-3 border border-line rounded bg-surface overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-line flex items-center justify-between">
+        <span className="text-xs font-mono text-ink-muted truncate">{smiles}</span>
+        {source && <span className="text-[10px] text-ink-faint whitespace-nowrap ml-3">{source}</span>}
       </div>
 
-      {/* Lipinski Rule of 5 */}
-      <div className="mb-5 bg-slate-800/60 rounded-lg p-3.5 border border-slate-700/50">
+      <div className="px-4 py-3 border-b border-line">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" /> Lipinski Rule of 5
-          </span>
-          <span
-            className={`text-xs font-bold px-2 py-0.5 rounded ${
-              lipinski.passes ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-            }`}
-          >
-            {lipinski.passes ? "PASS (Rule of 5)" : `FAIL (${lipinski.violations} Violations)`}
+          <span className="text-xs text-ink-muted">Lipinski Rule of Five</span>
+          <span className={`text-xs ${lipinski.passes ? "text-flag-good" : "text-flag-risk"}`}>
+            {lipinski.passes ? "pass" : `fail — ${lipinski.violations} violation${lipinski.violations === 1 ? "" : "s"}`}
           </span>
         </div>
-        <div className="grid grid-cols-5 gap-2 text-center text-xs">
-          <div className="bg-slate-900/60 p-2 rounded border border-slate-700/40">
-            <div className="text-slate-400 text-[10px] uppercase">MW</div>
-            <div className="font-semibold text-slate-200">{lipinski.mw}</div>
-            <div className="text-[9px] text-slate-500">≤ 500</div>
-          </div>
-          <div className="bg-slate-900/60 p-2 rounded border border-slate-700/40">
-            <div className="text-slate-400 text-[10px] uppercase">LogP</div>
-            <div className="font-semibold text-slate-200">{lipinski.logp}</div>
-            <div className="text-[9px] text-slate-500">≤ 5.0</div>
-          </div>
-          <div className="bg-slate-900/60 p-2 rounded border border-slate-700/40">
-            <div className="text-slate-400 text-[10px] uppercase">HBD</div>
-            <div className="font-semibold text-slate-200">{lipinski.hbd}</div>
-            <div className="text-[9px] text-slate-500">≤ 5</div>
-          </div>
-          <div className="bg-slate-900/60 p-2 rounded border border-slate-700/40">
-            <div className="text-slate-400 text-[10px] uppercase">HBA</div>
-            <div className="font-semibold text-slate-200">{lipinski.hba}</div>
-            <div className="text-[9px] text-slate-500">≤ 10</div>
-          </div>
-          <div className="bg-slate-900/60 p-2 rounded border border-slate-700/40">
-            <div className="text-slate-400 text-[10px] uppercase">TPSA</div>
-            <div className="font-semibold text-slate-200">{lipinski.tpsa} Å²</div>
-            <div className="text-[9px] text-slate-500">≤ 140</div>
-          </div>
+        <div className="grid grid-cols-5 text-center">
+          {lipinskiRows.map(([label, value, limit]) => (
+            <div key={label} className="border-l border-line first:border-l-0 px-1">
+              <div className="text-[10px] text-ink-faint">{label}</div>
+              <div className="text-sm font-mono">{value}</div>
+              <div className="text-[10px] text-ink-faint">{limit}</div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* ADMET Property Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div>
         {Object.entries(properties).map(([key, prop]) => (
-          <div key={key} className="bg-slate-800/40 rounded-lg p-3 border border-slate-700/40 flex items-center justify-between">
-            <div>
-              <div className="text-xs font-semibold text-slate-200">{prop.name}</div>
-              <div className="text-[11px] text-slate-400">{prop.description}</div>
-              <div className="mt-1 font-mono text-sm font-bold text-slate-100">
-                {prop.value} <span className="text-xs font-normal text-slate-400">{prop.unit}</span>
-              </div>
+          <div key={key} className="px-4 py-2.5 flex items-center justify-between border-b border-line last:border-b-0">
+            <div className="min-w-0">
+              <div className="text-sm">{prop.name}</div>
+              <div className="text-[11px] text-ink-faint truncate">{prop.description}</div>
             </div>
-            <div>{getFlagBadge(prop.flag)}</div>
+            <div className="flex items-center gap-2.5 flex-shrink-0 ml-3">
+              <span className="text-sm font-mono">
+                {prop.value}
+                <span className="text-ink-faint text-xs ml-1">{prop.unit}</span>
+              </span>
+              <span
+                className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                style={{ backgroundColor: flagColor[prop.flag] }}
+                title={flagLabel[prop.flag]}
+              />
+            </div>
           </div>
         ))}
       </div>

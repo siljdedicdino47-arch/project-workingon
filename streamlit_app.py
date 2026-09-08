@@ -443,10 +443,22 @@ def main():
                 # Direct / Fallback Mode without Claude API key — no AI call is made at all,
                 # so this path never sends anything to a third party except NCBI PubMed.
                 with st.spinner("Processing query via local ChemBrain tools..."):
-                    # Check for SMILES pattern (cap length to avoid pathological regex input)
-                    smiles_match = re.search(r'`?([A-Za-z0-9@+\-\[\]\(\)\\\/=#$%]{1,200})`?', prompt[:500])
-                    if smiles_match and any(c in prompt for c in ['=', '(', ')', '#']) and len(smiles_match.group(1)) > 3:
-                        smiles = smiles_match.group(1)
+                    # Extract SMILES: prefer backtick-wrapped text (how the preset buttons
+                    # and "Direct ADMET SMILES" field format it), otherwise scan words for
+                    # one that actually looks like a structure — not just the first run of
+                    # letters, which used to match plain English words like "Predict".
+                    backtick_match = re.search(r'`([^`]{1,200})`', prompt)
+                    smiles = None
+                    if backtick_match:
+                        smiles = backtick_match.group(1).strip()
+                    else:
+                        for token in re.findall(r'\S+', prompt[:500]):
+                            clean = token.strip('.,;:!?()')
+                            if len(clean) > 3 and any(c in clean for c in ['=', '#', '(', ')', '@']):
+                                smiles = clean
+                                break
+
+                    if smiles:
                         admet_res = predict_admet(smiles)
                         if admet_res.get("valid"):
                             ans_text = f"Calculated ADMET predictions and Lipinski Rule of 5 for `{smiles}` [RDKit]."

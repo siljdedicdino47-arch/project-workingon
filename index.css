@@ -1,3 +1,39 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+  }
+  ::selection {
+    background: theme('colors.accent.soft');
+  }
+}
+
+@layer utilities {
+  /* thin scrollbar for the conversation stream and reference lists */
+  .thin-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+  .thin-scroll::-webkit-scrollbar-thumb {
+    background: theme('colors.line');
+    border-radius: 3px;
+  }
+  .thin-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+/* single deliberate entrance for a new message — no per-card hover choreography */
+@keyframes entry-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.entry-in {
+  animation: entry-in 180ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entry-in { animation: none; }
+}
